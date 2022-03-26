@@ -1,6 +1,8 @@
 package gortsplib
 
 import (
+	"time"
+
 	"github.com/pion/rtcp"
 	"github.com/pion/rtp/v2"
 
@@ -184,9 +186,11 @@ type ServerHandlerOnSetParameter interface {
 
 // ServerHandlerOnPacketRTPCtx is the context of a RTP packet.
 type ServerHandlerOnPacketRTPCtx struct {
-	Session *ServerSession
-	TrackID int
-	Packet  *rtp.Packet
+	Session   *ServerSession
+	TrackID   int
+	Packet    *rtp.Packet
+	H264NALUs [][]byte
+	H264PTS   time.Duration
 }
 
 // ServerHandlerOnPacketRTP can be implemented by a ServerHandler.

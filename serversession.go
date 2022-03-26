@@ -15,10 +15,12 @@ import (
 	"github.com/pion/rtp/v2"
 
 	"github.com/aler9/gortsplib/pkg/base"
+	"github.com/aler9/gortsplib/pkg/h264"
 	"github.com/aler9/gortsplib/pkg/headers"
 	"github.com/aler9/gortsplib/pkg/liberrors"
 	"github.com/aler9/gortsplib/pkg/ringbuffer"
 	"github.com/aler9/gortsplib/pkg/rtcpreceiver"
+	"github.com/aler9/gortsplib/pkg/rtph264"
 )
 
 func stringsReverseIndex(s, substr string) int {
@@ -178,6 +180,7 @@ type ServerSession struct {
 	udpCheckStreamTimer *time.Timer
 	writerRunning       bool
 	writeBuffer         *ringbuffer.RingBuffer
+	h264Decoders        map[int]*rtph264.Decoder // publish
 
 	// writer channels
 	writerDone chan struct{}
@@ -296,7 +299,6 @@ func (ss *ServerSession) run() {
 	if ss.writerRunning {
 		ss.writeBuffer.Close()
 		<-ss.writerDone
-		ss.writerRunning = false
 	}
 
 	for sc := range ss.conns {
@@ -871,7 +873,6 @@ func (ss *ServerSession) handleRequest(sc *ServerConn, req *base.Request) (*base
 
 		default: // TCP
 			ss.tcpConn = sc
-
 			ss.tcpConn.readFunc = ss.tcpConn.readFuncTCP
 			err = errSwitchReadFunc
 
@@ -976,6 +977,17 @@ func (ss *ServerSession) handleRequest(sc *ServerConn, req *base.Request) (*base
 
 		ss.state = ServerSessionStateRecord
 
+		for i, at := range ss.announcedTracks {
+			if _, ok := at.track.(*TrackH264); ok {
+				if ss.h264Decoders == nil {
+					ss.h264Decoders = make(map[int]*rtph264.Decoder)
+				}
+
+				ss.h264Decoders[i] = &rtph264.Decoder{}
+				ss.h264Decoders[i].Init()
+			}
+		}
+
 		switch *ss.setuppedTransport {
 		case TransportUDP:
 			ss.udpCheckStreamTimer = time.NewTimer(ss.s.checkStreamPeriod)
@@ -1002,7 +1014,6 @@ func (ss *ServerSession) handleRequest(sc *ServerConn, req *base.Request) (*base
 
 		default: // TCP
 			ss.tcpConn = sc
-
 			ss.tcpConn.readFunc = ss.tcpConn.readFuncTCP
 			err = errSwitchReadFunc
 
@@ -1072,13 +1083,10 @@ func (ss *ServerSession) handleRequest(sc *ServerConn, req *base.Request) (*base
 			default: // TCP
 				ss.tcpConn.readFunc = ss.tcpConn.readFuncStandard
 				err = errSwitchReadFunc
-
 				ss.tcpConn = nil
 			}
 
 		case ServerSessionStateRecord:
-			ss.state = ServerSessionStatePreRecord
-
 			switch *ss.setuppedTransport {
 			case TransportUDP:
 				ss.udpCheckStreamTimer = emptyTimer()
@@ -1094,9 +1102,12 @@ func (ss *ServerSession) handleRequest(sc *ServerConn, req *base.Request) (*base
 			default: // TCP
 				ss.tcpConn.readFunc = ss.tcpConn.readFuncStandard
 				err = errSwitchReadFunc
-
 				ss.tcpConn = nil
 			}
+
+			ss.h264Decoders = nil
+
+			ss.state = ServerSessionStatePreRecord
 		}
 
 		return res, err
@@ -1200,6 +1211,69 @@ func (ss *ServerSession) runWriter() {
 		data := tmp.(trackTypePayload)
 
 		writeFunc(data.trackID, data.isRTP, data.payload)
+	}
+}
+
+func (ss *ServerSession) onPacketRTP(now time.Time, trackID int, pkt *rtp.Packet) {
+	// remove padding
+	pkt.Header.Padding = false
+	pkt.PaddingSize = 0
+
+	if _, ok := ss.announcedTracks[trackID].track.(*TrackH264); ok {
+		nalus, pts, err := ss.h264Decoders[trackID].DecodeUntilMarker(pkt)
+		if err == nil {
+			rr := ss.announcedTracks[trackID].rtcpReceiver
+			if rr != nil {
+				rr.ProcessPacketRTP(now, pkt, h264.IDRPresent(nalus))
+			}
+
+			if h, ok := ss.s.Handler.(ServerHandlerOnPacketRTP); ok {
+				h.OnPacketRTP(&ServerHandlerOnPacketRTPCtx{
+					Session:   ss,
+					TrackID:   trackID,
+					Packet:    pkt,
+					H264NALUs: append([][]byte(nil), nalus...),
+					H264PTS:   pts,
+				})
+			}
+		} else {
+			rr := ss.announcedTracks[trackID].rtcpReceiver
+			if rr != nil {
+				rr.ProcessPacketRTP(now, pkt, false)
+			}
+
+			if h, ok := ss.s.Handler.(ServerHandlerOnPacketRTP); ok {
+				h.OnPacketRTP(&ServerHandlerOnPacketRTPCtx{
+					Session: ss,
+					TrackID: trackID,
+					Packet:  pkt,
+				})
+			}
+		}
+		return
+	}
+
+	rr := ss.announcedTracks[trackID].rtcpReceiver
+	if rr != nil {
+		rr.ProcessPacketRTP(now, pkt, true)
+	}
+
+	if h, ok := ss.s.Handler.(ServerHandlerOnPacketRTP); ok {
+		h.OnPacketRTP(&ServerHandlerOnPacketRTPCtx{
+			Session: ss,
+			TrackID: trackID,
+			Packet:  pkt,
+		})
+	}
+}
+
+func (ss *ServerSession) onPacketRTCP(trackID int, pkt rtcp.Packet) {
+	if h, ok := ss.s.Handler.(ServerHandlerOnPacketRTCP); ok {
+		h.OnPacketRTCP(&ServerHandlerOnPacketRTCPCtx{
+			Session: ss,
+			TrackID: trackID,
+			Packet:  pkt,
+		})
 	}
 }
 
