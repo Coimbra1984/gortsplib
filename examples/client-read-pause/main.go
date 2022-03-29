@@ -4,7 +4,7 @@ import (
 	"log"
 	"time"
 
-	"github.com/aler9/gortsplib"
+	"github.com/Coimbra1984/gortsplib"
 	"github.com/pion/rtcp"
 	"github.com/pion/rtp"
 )

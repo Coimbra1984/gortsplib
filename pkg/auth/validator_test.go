@@ -5,7 +5,7 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/aler9/gortsplib/pkg/base"
+	"github.com/Coimbra1984/gortsplib/pkg/base"
 )
 
 func TestValidatorErrors(t *testing.T) {

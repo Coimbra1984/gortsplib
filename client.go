@@ -2,7 +2,7 @@
 Package gortsplib is a RTSP 1.0 library for the Go programming language,
 written for rtsp-simple-server.
 
-Examples are available at https://github.com/aler9/gortsplib/tree/master/examples
+Examples are available at https://github.com/Coimbra1984/gortsplib/tree/master/examples
 
 */
 package gortsplib
@@ -24,14 +24,14 @@ import (
 	"github.com/pion/rtcp"
 	"github.com/pion/rtp"
 
-	"github.com/aler9/gortsplib/pkg/auth"
-	"github.com/aler9/gortsplib/pkg/base"
-	"github.com/aler9/gortsplib/pkg/headers"
-	"github.com/aler9/gortsplib/pkg/liberrors"
-	"github.com/aler9/gortsplib/pkg/multibuffer"
-	"github.com/aler9/gortsplib/pkg/ringbuffer"
-	"github.com/aler9/gortsplib/pkg/rtcpreceiver"
-	"github.com/aler9/gortsplib/pkg/rtcpsender"
+	"github.com/Coimbra1984/gortsplib/pkg/auth"
+	"github.com/Coimbra1984/gortsplib/pkg/base"
+	"github.com/Coimbra1984/gortsplib/pkg/headers"
+	"github.com/Coimbra1984/gortsplib/pkg/liberrors"
+	"github.com/Coimbra1984/gortsplib/pkg/multibuffer"
+	"github.com/Coimbra1984/gortsplib/pkg/ringbuffer"
+	"github.com/Coimbra1984/gortsplib/pkg/rtcpreceiver"
+	"github.com/Coimbra1984/gortsplib/pkg/rtcpsender"
 )
 
 const (

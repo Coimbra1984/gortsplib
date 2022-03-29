@@ -8,8 +8,8 @@ import (
 	"github.com/pion/rtcp"
 	"github.com/pion/rtp"
 
-	"github.com/aler9/gortsplib/pkg/liberrors"
-	"github.com/aler9/gortsplib/pkg/rtcpsender"
+	"github.com/Coimbra1984/gortsplib/pkg/liberrors"
+	"github.com/Coimbra1984/gortsplib/pkg/rtcpsender"
 )
 
 type serverStreamTrack struct {

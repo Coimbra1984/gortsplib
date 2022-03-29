@@ -15,9 +15,9 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/aler9/gortsplib/pkg/auth"
-	"github.com/aler9/gortsplib/pkg/base"
-	"github.com/aler9/gortsplib/pkg/headers"
+	"github.com/Coimbra1984/gortsplib/pkg/auth"
+	"github.com/Coimbra1984/gortsplib/pkg/base"
+	"github.com/Coimbra1984/gortsplib/pkg/headers"
 )
 
 func writeReqReadRes(conn net.Conn,

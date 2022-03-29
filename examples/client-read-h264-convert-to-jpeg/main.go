@@ -8,9 +8,9 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/aler9/gortsplib"
-	"github.com/aler9/gortsplib/pkg/base"
-	"github.com/aler9/gortsplib/pkg/rtph264"
+	"github.com/Coimbra1984/gortsplib"
+	"github.com/Coimbra1984/gortsplib/pkg/base"
+	"github.com/Coimbra1984/gortsplib/pkg/rtph264"
 	"github.com/pion/rtp"
 )
 
