@@ -1,6 +1,6 @@
 module github.com/Coimbra1984/gortsplib
 
-go 1.15
+go 1.14
 
 require (
 	github.com/asticode/go-astits v1.10.0
